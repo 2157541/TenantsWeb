@@ -4,6 +4,17 @@
 	// connect to database
 	$db = mysqli_connect('localhost', 'root', '', 'webtechlecture');
 
+	// call the login() function if register_btn is clicked
+	if (isset($_POST['login_btn'])) {
+		login();
+	}
+	// log user out if logout button clicked
+	if (isset($_GET['logout'])) {
+		session_destroy();
+		unset($_SESSION['user']);
+		header("location: ../login.php");
+	}
+
 	// variable declaration
 	$roomNumber = "";
 	$message    = "";
@@ -48,9 +59,6 @@
 						  VALUES('$roomNumber', '$message')";
 				mysqli_query($db, $query);
 				$_SESSION['success']  = "New user successfully created!!";
-				header('location: home.php');
-
-
 		}
 
 	}
@@ -58,7 +66,7 @@
 	// return user array from their id
 	function getUserById($id){
 		global $db;
-		$query = "SELECT * FROM users WHERE id=" . $id;
+		$query = "SELECT * FROM tenant_accounts WHERE id=" . $id;
 		$result = mysqli_query($db, $query);
 
 		$user = mysqli_fetch_assoc($result);
@@ -83,19 +91,18 @@
 
 		// attempt login if no errors on form
 		if (count($errors) == 0) {
-			$password = md5($password);
 
-			$query = "SELECT * FROM users WHERE username='$username' AND password='$password' LIMIT 1";
+			$query = "SELECT * FROM tenant_accounts WHERE username='$username' AND password='$password' LIMIT 1";
 			$results = mysqli_query($db, $query);
 
 			if (mysqli_num_rows($results) == 1) { // user found
 				// check if user is admin or user
 				$logged_in_user = mysqli_fetch_assoc($results);
-				if ($logged_in_user['user_type'] == 'admin') {
+				if ($logged_in_user['user_type'] == 'tenant') {
 
 					$_SESSION['user'] = $logged_in_user;
 					$_SESSION['success']  = "You are now logged in";
-					header('location: admin/home.php');
+					header('location: index.php');
 				}else{
 					$_SESSION['user'] = $logged_in_user;
 					$_SESSION['success']  = "Request sent successfully";
@@ -106,23 +113,23 @@
 		}
 	}
 
-	function isLoggedIn()
-	{
-		if (isset($_SESSION['user'])) {
+	//prevent unregistered user to access the page
+	function isTenant(){
+		if (isset($_SESSION['user']) && $_SESSION['user']['user_type'] == 'tenant' ) {
 			return true;
 		}else{
 			return false;
 		}
 	}
 
-	function isAdmin()
-	{
-		if (isset($_SESSION['user']) && $_SESSION['user']['user_type'] == 'admin' ) {
+	function isPersonel(){
+		if (isset($_SESSION['user']) && $_SESSION['user']['user_type'] == 'personel' ) {
 			return true;
 		}else{
 			return false;
 		}
 	}
+
 
 	// escape string
 	function e($val){
